@@ -17,6 +17,7 @@
       <ProjectReference Include="..\task6\task6.csproj" />
       <ProjectReference Include="..\task7\task7.csproj" />
       <ProjectReference Include="..\task8\task8.csproj" />
+      <ProjectReference Include="..\task9\task9.csproj" />
     </ItemGroup>
 
 </Project>

@@ -6,6 +6,7 @@ using task5;
 using task6;
 using task7;
 using task8;
+using task9;
 
 namespace Application;
 
@@ -25,6 +26,7 @@ internal static class Program
             Task6.Run,
             Task7.Run,
             Task8.Run,
+            Task9.Run,
         };
         
         while (true)
@@ -36,9 +38,10 @@ internal static class Program
             Console.WriteLine("3. Представление многочлена по степеням (x - B)");
             Console.WriteLine("4. Нахождение пределов рациональной функции R(x) = f(x)/g(x)");
             Console.WriteLine("5. Нахождение пределов рациональной функции T(x) = f1^k(s1(x))/f2^k(s2(x))");
-            Console.WriteLine("6. Нахождение асимптотического решения рекуррентного соотношения T(x) = αT(x/β) + x");
-            Console.WriteLine("7. Нахождение асимптотического решения рекуррентного соотношения T(x) = αT(x/β) + 2^x");
+            Console.WriteLine("6. Нахождение асимптотического решения рекуррентного соотношения T(x) = aT(x/b) + x");
+            Console.WriteLine("7. Нахождение асимптотического решения рекуррентного соотношения T(x) = aT(x/b) + 2^x");
             Console.WriteLine("8. Сравнение классического умножения и умножения методом Карацубы");
+            Console.WriteLine("9. Умножение рекурсивным методом на подобии метода Карацубы");
             Console.WriteLine("0. Выход");
             Console.WriteLine();
             

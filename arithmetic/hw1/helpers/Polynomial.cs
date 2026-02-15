@@ -238,4 +238,51 @@ public class Polynomial(IEnumerable<double> degrees)
 
         return z0 + (z1 << m) + (z2 << (2 * m));
     }
+
+    private static Polynomial EvaluateAt(Polynomial f0, Polynomial f1, Polynomial f2, double x)
+    {
+        return f0 + (f1 * x) + (f2 * (x * x));
+    }
+
+    public static Polynomial MultiplyToom3(Polynomial p1, Polynomial p2)
+    {
+        var n = Math.Max(p1.Degree, p2.Degree) + 1;
+
+        if (n <= 2) return Polynomial.MultiplyClassic(p1, p2);
+
+        var k = (n + 2) / 3;
+
+        var p1_0 = p1.Slice(0, k);
+        var p1_1 = p1.Slice(k, 2 * k);
+        var p1_2 = p2.Slice(2 * k, 3 * k);
+
+        var p2_0 = p2.Slice(0, k);
+        var p2_1 = p2.Slice(k, 2 * k);
+        var p2_2 = p2.Slice(2 * k, 3 * k);
+
+        var prod0 = MultiplyToom3(p1_0, p2_0);
+
+        var prod1 = MultiplyToom3(p1_0 + p1_1 + p1_2, p2_0 + p2_1 + p2_2);
+
+        var prod2 = MultiplyToom3(p1_0 - p1_1 + p1_2, p2_0 - p2_1 + p2_2);
+
+        var prod3 = MultiplyToom3(p1_0 + (p1_1 * 2) + (p1_2 * 4), p2_0 + (p2_1 * 2) + (p2_2 * 4));
+
+        var prod4 = MultiplyToom3(p1_2, p2_2);
+
+        var H0 = prod0;
+        var H4 = prod4;
+
+        var H2 = (prod2 + prod1) * 0.5 - H0 - H4;
+
+        var H3 = (prod3 - prod1) * (1.0 / 3.0) - H2 * 2 - H4 * 2;
+
+        var H1 = prod1 - H0 - H2 - H3 - H4;
+
+        return H0
+               + (H1 << k)
+               + (H2 << (2 * k))
+               + (H3 << (3 * k))
+               + (H4 << (4 * k));
+    }
 }
