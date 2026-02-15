@@ -1,6 +1,7 @@
 ﻿namespace application;
 using task1;
 using task2;
+using task3;
 
 internal static class Program
 {
@@ -11,7 +12,8 @@ internal static class Program
         var runners = new List<Runner>
         {
             Task1.Run,
-            Task2.Run
+            Task2.Run,
+            Task3.Run
         };
         
         while (true)
@@ -19,11 +21,12 @@ internal static class Program
             Console.Clear();
             Console.WriteLine("1. Определение принадлежности многочлена линейной оболочке");
             Console.WriteLine("2. Представление многочлена в виде линейной комбинации степеней");
+            Console.WriteLine("3. Представление многочлена по степеням (x - B)");
             Console.WriteLine("0. Выход");
 
             int choice;
             do Console.Write("Выберите задачу: ");
-            while (!int.TryParse(Console.ReadLine(), out choice));
+            while (!int.TryParse(Console.ReadLine(), out choice) || choice < 0 || choice > runners.Count);
 
             if (choice == 0) return;
             
