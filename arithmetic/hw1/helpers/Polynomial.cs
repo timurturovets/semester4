@@ -146,4 +146,16 @@ public class Polynomial(IEnumerable<double> degrees)
 
         return true;
     }
+
+    public Limit GetLimitAtInfinity(bool positive)
+    {
+        var lead = this[Degree];
+
+        if (Degree == 0) return Limit.Finite(this[0]);
+
+        var sign = lead;
+        if (!positive && Degree % 2 == 1) sign = -sign;
+
+        return sign > 0 ? Limit.PositiveInfinity() : Limit.NegativeInfinity();
+    }
 }

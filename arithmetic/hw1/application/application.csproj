@@ -13,6 +13,7 @@
       <ProjectReference Include="..\task2\task2.csproj" />
       <ProjectReference Include="..\task3\task3.csproj" />
       <ProjectReference Include="..\task4\task4.csproj" />
+      <ProjectReference Include="..\task5\task5.csproj" />
     </ItemGroup>
 
 </Project>

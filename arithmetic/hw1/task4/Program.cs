@@ -20,9 +20,9 @@ public class Task4
         }
 
         // ReSharper disable once InconsistentNaming
-        var A = 0.0;
+        double A;
         Console.Write("Введите число A: ");
-        while (!double.TryParse(Console.ReadLine(), out A!))
+        while (!double.TryParse(Console.ReadLine(), out A))
         {
             Console.Write("Некорректный ввод. Введите заново: ");
         }
