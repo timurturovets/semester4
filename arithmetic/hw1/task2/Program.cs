@@ -21,6 +21,7 @@ public static class Task2
 
         var coefficients = TaylorCoefficients(polynomial, a);
         
+        Console.WriteLine("Многочлен в виде линейной комбинации степеней (x - a)^k:");
         Console.Write("f(x) = ");
 
         var first = true;

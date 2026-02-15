@@ -28,6 +28,7 @@ internal static class Program
         while (true)
         {
             Console.Clear();
+            Console.WriteLine("Эта программа решает задачи с применением многочленов.");
             Console.WriteLine("1. Определение принадлежности многочлена линейной оболочке");
             Console.WriteLine("2. Представление многочлена в виде линейной комбинации степеней");
             Console.WriteLine("3. Представление многочлена по степеням (x - B)");

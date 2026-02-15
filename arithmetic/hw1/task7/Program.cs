@@ -14,6 +14,7 @@ public class Task7
         }
         
         var (asymptotic, approx) = PoweredRecurrence.AsymptoticT(x);
+        Console.WriteLine("Ведущий порядок роста - член 2^x.");
         Console.WriteLine($"{asymptotic}, T({x}) = {approx}");
     }
 }

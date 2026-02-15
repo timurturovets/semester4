@@ -1,6 +1,8 @@
 ﻿using Helpers;
 
 namespace task3;
+
+// ReSharper disable file InconsistentNaming
 public static class Task3
 {
     public static void Run(string[] args)
@@ -13,15 +15,16 @@ public static class Task3
         }
 
         Console.Write("Введите текущий базис a: ");
-        var a = 0.0;
+        double a;
         while(!double.TryParse(Console.ReadLine(), out a)) Console.Write("Некорректный ввод. Введите заново: ");
         
         Console.Write("Введите новый центр базиса B: ");
-        var B = 0.0;
+        double B;
         while(!double.TryParse(Console.ReadLine(), out B)) Console.Write("Некорректный ввод. Введите заново: ");
         
         var shiftedPolynomial = ShiftBasis(polynomial, a, B);
         
+        Console.WriteLine($"Многочлен с новым центром базиса {B}:");
         Console.Write("f(x) = ");
 
         var first = true;
@@ -53,7 +56,6 @@ public static class Task3
         
     }
     
-    // ReSharper disable once InconsistentNaming
     private static Polynomial ShiftBasis(Polynomial f, double a, double B)
     {
         var delta = B - a;
