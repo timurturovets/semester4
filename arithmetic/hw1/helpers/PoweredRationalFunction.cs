@@ -1,4 +1,4 @@
-﻿namespace helpers;
+﻿namespace Helpers;
 
 // ReSharper disable file InconsistentNaming
 public class PoweredRationalFunction

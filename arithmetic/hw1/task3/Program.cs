@@ -1,5 +1,6 @@
-﻿namespace task3;
-using helpers;
+﻿using Helpers;
+
+namespace task3;
 public static class Task3
 {
     public static void Run(string[] args)

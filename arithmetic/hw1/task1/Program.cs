@@ -1,6 +1,6 @@
-﻿namespace task1;
+﻿using Helpers;
 
-using helpers;
+namespace task1;
 
 // ReSharper disable file InconsistentNaming
 public static class Task1

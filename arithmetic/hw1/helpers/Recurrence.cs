@@ -1,4 +1,4 @@
-﻿namespace helpers;
+﻿namespace Helpers;
 
 public static class Recurrence
 {
@@ -29,5 +29,13 @@ public static class Recurrence
         }
         
         return (asymptotic, approx);
+    }
+}
+
+public static class PoweredRecurrence
+{
+    public static (string asymptotic, double approximate) AsymptoticT(double x)
+    {
+        return ("T(x) ~ 2^x, x -> +бесконечность", Math.Pow(2, x));
     }
 }

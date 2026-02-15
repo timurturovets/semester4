@@ -1,5 +1,6 @@
 ﻿namespace task6;
-using helpers;
+
+using Helpers;
 
 public class Task6
 {

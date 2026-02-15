@@ -1,4 +1,4 @@
-﻿namespace helpers;
+﻿namespace Helpers;
 
 public class Polynomial(IEnumerable<double> degrees)
 {

@@ -1,4 +1,4 @@
-﻿namespace helpers;
+﻿namespace Helpers;
 
 public enum LimitType
 {

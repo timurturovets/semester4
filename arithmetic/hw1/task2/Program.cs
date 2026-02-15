@@ -1,6 +1,6 @@
-﻿namespace task2;
-using helpers;
-using static helpers.Polynomial;
+﻿using Helpers;
+
+namespace task2;
 
 public static class Task2
 {

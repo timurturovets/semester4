@@ -1,5 +1,7 @@
 ﻿namespace task5;
-using helpers;
+
+using Helpers;
+
 public class Task5
 {
     public static void Run(string[] args)
