@@ -112,4 +112,38 @@ public class Polynomial2D(Polynomial[] coefficients)
 
         return z0 + (z1 << m) + (z2 << (2 * m));
     }
+
+    public double Evaluate(int n, int x, int y)
+    {
+        OperationCounter.Reset();
+
+        var Q = new double[n + 1];
+        for (var j = 0; j <= n; j++)
+        {
+            var q = 0.0;
+
+            var polynomial = Coefficients[j];
+
+            for (var i = polynomial.Degree; i >= 0; i--)
+            {
+                q *= x;
+                q += polynomial[i];
+                OperationCounter.Multiply();
+                OperationCounter.Add();
+            }
+
+            Q[j] = q;
+        }
+
+        var result = 0.0;
+        for (var j = n; j >= 0; j--)
+        {
+            result *= y;
+            result += Q[j];
+            OperationCounter.Multiply();
+            OperationCounter.Add();
+        }
+
+        return result;
+    }
 }

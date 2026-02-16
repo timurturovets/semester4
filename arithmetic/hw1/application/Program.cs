@@ -10,6 +10,7 @@ using task9;
 using Knuth1;
 using Knuth2;
 using Knuth3;
+using Knuth4;
 
 namespace Application;
 
@@ -33,6 +34,8 @@ internal static class Program
             Task10.Run,
             Task11.Run,
             Task12.Run,
+            Task13.Run,
+            
         };
         
         while (true)
@@ -51,6 +54,7 @@ internal static class Program
             Console.WriteLine("10.(Кнут) Деление неотрицательного n-разрядного целого числа");
             Console.WriteLine("11.(Кнут) Вычисление нечётного многочлена");
             Console.WriteLine("12.(Кнут) Применение правила Горнера при умножении и сложении многочленов");
+            Console.WriteLine("13.(Кнут) Аналог метода Горнера для вычисления многочлена от двух переменных");
             Console.WriteLine("0. Выход");
             Console.WriteLine();
             
