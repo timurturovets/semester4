@@ -12,6 +12,8 @@ public class OperationCounter
     }
     
     public static void Add() => Additions++;
+    public static void Add(int n) => Additions += n;
     public static void Multiply() => Multiplications++;
+    public static void Multiply(int n) => Multiplications += n;
     public static long Total() => Additions + Multiplications;
 }

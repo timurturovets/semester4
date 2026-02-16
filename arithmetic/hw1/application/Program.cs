@@ -11,6 +11,7 @@ using Knuth1;
 using Knuth2;
 using Knuth3;
 using Knuth4;
+using Knuth5;
 
 namespace Application;
 
@@ -35,6 +36,7 @@ internal static class Program
             Task11.Run,
             Task12.Run,
             Task13.Run,
+            Task14.Run,
             
         };
         
@@ -55,6 +57,7 @@ internal static class Program
             Console.WriteLine("11.(Кнут) Вычисление нечётного многочлена");
             Console.WriteLine("12.(Кнут) Применение правила Горнера при умножении и сложении многочленов");
             Console.WriteLine("13.(Кнут) Аналог метода Горнера для вычисления многочлена от двух переменных");
+            Console.WriteLine("14.(Кнут) Количество операций для метода Горнера и схемы (3) с комплексными числами");
             Console.WriteLine("0. Выход");
             Console.WriteLine();
             
