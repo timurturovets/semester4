@@ -8,6 +8,8 @@ using task7;
 using task8;
 using task9;
 using Knuth1;
+using Knuth2;
+
 namespace Application;
 
 internal static class Program
@@ -28,6 +30,7 @@ internal static class Program
             Task8.Run,
             Task9.Run,
             Task10.Run,
+            Task11.Run,
         };
         
         while (true)
@@ -43,7 +46,8 @@ internal static class Program
             Console.WriteLine("7. Нахождение асимптотического решения рекуррентного соотношения T(x) = aT(x/b) + 2^x");
             Console.WriteLine("8. (фон цур Гатен) Сравнение классического умножения и умножения методом Карацубы");
             Console.WriteLine("9. (фон цур Гатен) Умножение рекурсивным методом на подобии метода Карацубы");
-            Console.WriteLine("10. (Кнут) Деление неотрицательного n-разрядного целого числа");
+            Console.WriteLine("10.(Кнут) Деление неотрицательного n-разрядного целого числа");
+            Console.WriteLine("11.(Кнут) Вычисление нечётного многочлена");
             Console.WriteLine("0. Выход");
             Console.WriteLine();
             

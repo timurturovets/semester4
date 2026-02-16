@@ -10,6 +10,7 @@
     <ItemGroup>
       <ProjectReference Include="..\helpers\helpers.csproj" />
       <ProjectReference Include="..\Knuth1\Knuth1.csproj" />
+      <ProjectReference Include="..\Knuth2\Knuth2.csproj" />
       <ProjectReference Include="..\task1\task1.csproj" />
       <ProjectReference Include="..\task2\task2.csproj" />
       <ProjectReference Include="..\task3\task3.csproj" />

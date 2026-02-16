@@ -285,4 +285,22 @@ public class Polynomial(IEnumerable<double> degrees)
                + (H3 << (3 * k))
                + (H4 << (4 * k));
     }
+
+    public double EvaluateOdd(double x)
+    {
+        var oddCoefficients = new List<double>();
+        for (var i = 1; i <= Degree; i += 2)
+        {
+            oddCoefficients.Add(this[i]);
+        }
+
+        var x2 = x * x;
+        var result = 0.0;
+        for (var i = oddCoefficients.Count - 1; i >= 0; i--)
+        {
+            result = result * x2 + oddCoefficients[i];
+        }
+
+        return result * x;
+    }
 }
