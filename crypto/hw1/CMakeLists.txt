@@ -14,4 +14,7 @@ add_executable(hw1 main.cpp
         task3/run.h
         task3/task3.h
         task3/task3.cpp
+        task4/rc4/rc4.h
+        task4/rc4/rc4.cpp
+        task4/rc4/rc4_aux.h
 )
