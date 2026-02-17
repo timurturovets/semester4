@@ -4,6 +4,7 @@
 
 #include "task1/run.h"
 #include "task2/run.h"
+#include "task3/run.h"
 
 namespace tasks {
     class menu {
@@ -12,12 +13,14 @@ namespace tasks {
             std::vector const runners = {
                 task1::run,
                 task2::run,
+                task3::run,
             };
 
             while (true) {
                 std::system("cls");
                 std::cout << "1. Перестановка битов в рамках переданного значения" << std::endl;
                 std::cout << "2. Замена битов в рамках переданного значения" << std::endl;
+                std::cout << "3. Компонентные методы побитовых операций" << std::endl;
                 std::cout << "0. Выход" << std::endl;
 
                 int choice = -1;
