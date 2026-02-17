@@ -8,4 +8,7 @@ add_executable(hw1 main.cpp
         task1/task1.h
         task1/run.h
         menu.cpp
+        task2/run.h
+        task2/task2.cpp
+        task2/task2.h
 )
