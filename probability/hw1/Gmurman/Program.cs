@@ -11,6 +11,7 @@ public class Gmurman
             { 8, Task8.Run },
             { 13, Task13.Run },
             { 15, Task15.Run },
+            { 19, Task19.Run },
         };
         
         Console.WriteLine("Задачи из пособия Гмурмана");
@@ -18,6 +19,7 @@ public class Gmurman
         Console.WriteLine("8. В коробке 6 занумерованных кубиков...");
         Console.WriteLine("13. В конверте среди 100 фотокарточек...");
         Console.WriteLine("15. Устройство состоит из пяти элементов...");
+        Console.WriteLine("19. На складе имеется 15 кинескопов...");
         Console.WriteLine("0. Выход");
         Console.WriteLine();
         
