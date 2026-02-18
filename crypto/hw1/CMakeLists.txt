@@ -17,9 +17,7 @@ add_executable(hw1 main.cpp
         task4/rc4/rc4.h
         task4/rc4/rc4.cpp
         task4/run.h
-        task4/run.h
         task4/task4.cpp
-        task4/auxiliary/protocol.h
         task4/auxiliary/shared_memory.h
         task4/ipc/server.cpp
         task4/ipc/client.cpp

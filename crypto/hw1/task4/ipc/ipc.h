@@ -2,13 +2,7 @@
 
 #include <windows.h>
 #include <cstdint>
-
-constexpr size_t MAX_DATA_SIZE = 10 * 1024 * 1024;
-
-enum class Operation : uint32_t {
-    Encrypt = 1,
-    Decrypt = 2
-};
+#include "../auxiliary/shared_memory.h"
 
 struct Request {
     Operation op;
@@ -25,6 +19,6 @@ struct Response {
 constexpr size_t SHM_SIZE = sizeof(Request) + MAX_DATA_SIZE
                           + sizeof(Response) + MAX_DATA_SIZE;
 
-constexpr wchar_t SHM_NAME[]      = L"Global\\RC4_SharedMemory";
-constexpr wchar_t SLOT_SEM_NAME[] = L"Global\\RC4_SlotSemaphore";
-constexpr wchar_t REQ_SEM_NAME[]  = L"Global\\RC4_RequestSemaphore";
+constexpr wchar_t SHM_NAME[]      = L"RC4_SharedMemory";
+constexpr wchar_t SLOT_SEM_NAME[] = L"RC4_SlotSemaphore";
+constexpr wchar_t REQ_SEM_NAME[]  = L"RC4_RequestSemaphore";
