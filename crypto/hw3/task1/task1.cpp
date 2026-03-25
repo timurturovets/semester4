@@ -6,393 +6,391 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <limits>
+
 #include <sstream>
 #include <stdexcept>
 #include <thread>
 
 namespace tasks {
-    namespace {
-        std::size_t normalize_threads_count(std::size_t threads_count) {
-            return std::max<std::size_t>(1, threads_count);
-        }
+    std::size_t normalize_threads_count(std::size_t threads_count) {
+        return std::max<std::size_t>(1, threads_count);
+    }
 
-        std::vector<std::uint8_t> normalize_iv(const std::vector<std::uint8_t> &iv,
-                                               std::size_t block_size) {
+    std::vector<std::uint8_t> normalize_iv(const std::vector<std::uint8_t> &iv,
+                                           std::size_t block_size) {
+        if (block_size == 0) throw std::runtime_error("Размер блока должен быть больше нуля.");
+
+        if (iv.empty()) return std::vector<std::uint8_t>(block_size, 0);
+
+        if (iv.size() != block_size) throw std::runtime_error("Размер IV должен совпадать с размером блока.");
+
+        return iv;
+    }
+
+    class zeros_padding final : public i_padding_mode {
+    public:
+        [[nodiscard]] std::vector<std::uint8_t> pad(const std::vector<std::uint8_t> &input,
+                                      std::size_t block_size) const override {
             if (block_size == 0) throw std::runtime_error("Размер блока должен быть больше нуля.");
 
-            if (iv.empty()) return std::vector<std::uint8_t>(block_size, 0);
+            std::vector<std::uint8_t> output = input;
+            const std::size_t remainder = input.size() % block_size;
 
-            if (iv.size() != block_size) throw std::runtime_error("Размер IV должен совпадать с размером блока.");
+            if (remainder == 0) return output;
 
-            return iv;
+            output.resize(input.size() + (block_size - remainder), 0);
+
+            return output;
         }
 
-        class zeros_padding final : public i_padding_mode {
-        public:
-            [[nodiscard]] std::vector<std::uint8_t> pad(const std::vector<std::uint8_t> &input,
-                                          std::size_t block_size) const override {
-                if (block_size == 0) throw std::runtime_error("Размер блока должен быть больше нуля.");
+        void unpad(std::vector<std::uint8_t> &input, std::size_t block_size) const override {
+            if (block_size == 0) throw std::runtime_error("Размер блока должен быть больше нуля.");
 
-                std::vector<std::uint8_t> output = input;
-                const std::size_t remainder = input.size() % block_size;
+            while (!input.empty() && input.back() == 0) {
+                input.pop_back();
+            }
+        }
+    };
 
-                if (remainder == 0) return output;
+    class ansi_x923_padding final : public i_padding_mode {
+    public:
+        [[nodiscard]] std::vector<std::uint8_t> pad(const std::vector<std::uint8_t> &input,
+                                      std::size_t block_size) const override {
+            if (block_size == 0 || block_size > 255) throw std::runtime_error("ANSI X.923 требует размер блока от 1 до 255 байт.");
 
-                output.resize(input.size() + (block_size - remainder), 0);
+            const std::size_t remainder = input.size() % block_size;
+            std::size_t pad_size = block_size - remainder;
 
-                return output;
+            if (pad_size == 0) pad_size = block_size;
+
+            std::vector<std::uint8_t> output = input;
+
+            output.resize(input.size() + pad_size, 0);
+            output.back() = static_cast<std::uint8_t>(pad_size);
+
+            return output;
+        }
+
+        void unpad(std::vector<std::uint8_t> &input, std::size_t block_size) const override {
+            if (input.empty()) throw std::runtime_error("Пустые данные не могут быть распакованы ANSI X.923.");
+
+            if (block_size == 0 || block_size > 255) throw std::runtime_error("ANSI X.923 требует размер блока от 1 до 255 байт.");
+
+            if (input.size() % block_size != 0) throw std::runtime_error("Размер данных должен быть кратен размеру блока.");
+
+            const std::size_t pad_size = input.back();
+
+            if (pad_size == 0
+                || pad_size > block_size
+                || pad_size > input.size()
+            ) throw std::runtime_error("Некорректные данные набивки ANSI X.923.");
+
+            for (std::size_t i = input.size() - pad_size; i + 1 < input.size(); ++i) {
+                if (input[i] != 0) throw std::runtime_error("Некорректные данные набивки ANSI X.923.");
             }
 
-            void unpad(std::vector<std::uint8_t> &input, std::size_t block_size) const override {
-                if (block_size == 0) throw std::runtime_error("Размер блока должен быть больше нуля.");
+            input.resize(input.size() - pad_size);
+        }
+    };
 
-                while (!input.empty() && input.back() == 0) {
-                    input.pop_back();
-                }
-            }
-        };
+    class ecb_mode final : public i_cipher_mode {
+    public:
+        void encrypt(const i_symmetric_block_cipher &algorithm,
+                     const std::vector<std::uint8_t> &input,
+                     std::vector<std::uint8_t> &output,
+                     const std::vector<std::uint8_t> &iv,
+                     std::size_t threads_count,
+                     const std::vector<std::size_t> &mode_params) const override {
+            (void) iv;
+            (void) mode_params;
 
-        class ansi_x923_padding final : public i_padding_mode {
-        public:
-            [[nodiscard]] std::vector<std::uint8_t> pad(const std::vector<std::uint8_t> &input,
-                                          std::size_t block_size) const override {
-                if (block_size == 0 || block_size > 255) throw std::runtime_error("ANSI X.923 требует размер блока от 1 до 255 байт.");
-
-                const std::size_t remainder = input.size() % block_size;
-                std::size_t pad_size = block_size - remainder;
-
-                if (pad_size == 0) pad_size = block_size;
-
-                std::vector<std::uint8_t> output = input;
-
-                output.resize(input.size() + pad_size, 0);
-                output.back() = static_cast<std::uint8_t>(pad_size);
-
-                return output;
+            const std::size_t block_size = algorithm.block_size();
+            if (block_size == 0 || input.size() % block_size != 0) {
+                throw std::runtime_error("Размер входных данных должен быть кратен размеру блока.");
             }
 
-            void unpad(std::vector<std::uint8_t> &input, std::size_t block_size) const override {
-                if (input.empty()) throw std::runtime_error("Пустые данные не могут быть распакованы ANSI X.923.");
+            output.resize(input.size());
+            const std::size_t blocks_count = input.size() / block_size;
+            task1_aux::parallel_for_blocks(blocks_count, threads_count,
+               [&](std::size_t from, std::size_t to) {
+                   for (std::size_t block = from; block < to; ++block) {
+                       const std::size_t offset = block * block_size;
 
-                if (block_size == 0 || block_size > 255) throw std::runtime_error("ANSI X.923 требует размер блока от 1 до 255 байт.");
-
-                if (input.size() % block_size != 0) throw std::runtime_error("Размер данных должен быть кратен размеру блока.");
-
-                const std::size_t pad_size = input.back();
-
-                if (pad_size == 0
-                    || pad_size > block_size
-                    || pad_size > input.size()
-                ) throw std::runtime_error("Некорректные данные набивки ANSI X.923.");
-
-                for (std::size_t i = input.size() - pad_size; i + 1 < input.size(); ++i) {
-                    if (input[i] != 0) throw std::runtime_error("Некорректные данные набивки ANSI X.923.");
-                }
-
-                input.resize(input.size() - pad_size);
-            }
-        };
-
-        class ecb_mode final : public i_cipher_mode {
-        public:
-            void encrypt(const i_symmetric_block_cipher &algorithm,
-                         const std::vector<std::uint8_t> &input,
-                         std::vector<std::uint8_t> &output,
-                         const std::vector<std::uint8_t> &iv,
-                         std::size_t threads_count,
-                         const std::vector<std::size_t> &mode_params) const override {
-                (void) iv;
-                (void) mode_params;
-
-                const std::size_t block_size = algorithm.block_size();
-                if (block_size == 0 || input.size() % block_size != 0) {
-                    throw std::runtime_error("Размер входных данных должен быть кратен размеру блока.");
-                }
-
-                output.resize(input.size());
-                const std::size_t blocks_count = input.size() / block_size;
-                task1_aux::parallel_for_blocks(blocks_count, threads_count,
-                   [&](std::size_t from, std::size_t to) {
-                       for (std::size_t block = from; block < to; ++block) {
-                           const std::size_t offset = block * block_size;
-
-                           algorithm.encrypt_block(input.data() + offset, output.data() + offset);
-                       }
-                   });
-            }
-
-            void decrypt(const i_symmetric_block_cipher &algorithm,
-                         const std::vector<std::uint8_t> &input,
-                         std::vector<std::uint8_t> &output,
-                         const std::vector<std::uint8_t> &iv,
-                         std::size_t threads_count,
-                         const std::vector<std::size_t> &mode_params) const override {
-                (void) iv;
-                (void) mode_params;
-
-                const std::size_t block_size = algorithm.block_size();
-                if (block_size == 0
-                    || input.size() % block_size != 0
-                    ) throw std::runtime_error("Размер входных данных должен быть кратен размеру блока.");
-
-                output.resize(input.size());
-
-                const std::size_t blocks_count = input.size() / block_size;
-                task1_aux::parallel_for_blocks(blocks_count, threads_count,
-                   [&](std::size_t from, std::size_t to) {
-                       for (std::size_t block = from; block < to; ++block) {
-                           const std::size_t offset = block * block_size;
-
-                           algorithm.decrypt_block(input.data() + offset, output.data() + offset);
-                       }
-                   });
-            }
-        };
-
-        class cbc_mode final : public i_cipher_mode {
-        public:
-            void encrypt(const i_symmetric_block_cipher &algorithm,
-                         const std::vector<std::uint8_t> &input,
-                         std::vector<std::uint8_t> &output,
-                         const std::vector<std::uint8_t> &iv,
-                         std::size_t threads_count,
-                         const std::vector<std::size_t> &mode_params) const override {
-                (void) threads_count;
-                (void) mode_params;
-
-                const std::size_t block_size = algorithm.block_size();
-                if (block_size == 0
-                    || input.size() % block_size != 0
-                    ) throw std::runtime_error("Размер входных данных должен быть кратен размеру блока.");
-
-                const std::vector<std::uint8_t> init_vector = normalize_iv(iv, block_size);
-
-                output.resize(input.size());
-
-                std::vector<std::uint8_t> feedback = init_vector;
-                std::vector<std::uint8_t> mixed(block_size);
-
-                const std::size_t blocks_count = input.size() / block_size;
-
-                for (std::size_t block = 0; block < blocks_count; ++block) {
-                    const std::size_t offset = block * block_size;
-                    const auto *plain_block = input.data() + offset;
-                    auto *cipher_block = output.data() + offset;
-
-                    task1_aux::xor_blocks(plain_block, feedback.data(), mixed.data(), block_size);
-
-                    algorithm.encrypt_block(mixed.data(), cipher_block);
-
-                    std::copy(cipher_block, cipher_block + block_size, feedback.begin());
-                }
-            }
-
-            void decrypt(const i_symmetric_block_cipher &algorithm,
-                         const std::vector<std::uint8_t> &input,
-                         std::vector<std::uint8_t> &output,
-                         const std::vector<std::uint8_t> &iv,
-                         std::size_t threads_count,
-                         const std::vector<std::size_t> &mode_params) const override {
-                (void) mode_params;
-
-                const std::size_t block_size = algorithm.block_size();
-                if (block_size == 0 || input.size() % block_size != 0) {
-                    throw std::runtime_error("Размер входных данных должен быть кратен размеру блока.");
-                }
-
-                const std::vector<std::uint8_t> init_vector = normalize_iv(iv, block_size);
-
-                output.resize(input.size());
-
-                const std::size_t blocks_count = input.size() / block_size;
-
-                task1_aux::parallel_for_blocks(blocks_count, threads_count,
-                   [&](std::size_t from, std::size_t to) {
-                       std::vector<std::uint8_t> decrypted(block_size);
-
-                       for (std::size_t block = from; block < to; ++block) {
-                           const std::size_t offset = block * block_size;
-                           const auto *cipher_block = input.data() + offset;
-
-                           auto *plain_block = output.data() + offset;
-
-                           algorithm.decrypt_block(cipher_block, decrypted.data());
-
-                           const auto *feedback =
-                               block == 0
-                                  ? init_vector.data()
-                                  : input.data() + offset - block_size;
-
-                           task1_aux::xor_blocks(decrypted.data(), feedback, plain_block, block_size);
-                       }
+                       algorithm.encrypt_block(input.data() + offset, output.data() + offset);
                    }
-                );
-            }
-        };
+               });
+        }
 
-        class pcbc_mode final : public i_cipher_mode {
-        public:
-            void encrypt(const i_symmetric_block_cipher &algorithm,
-                         const std::vector<std::uint8_t> &input,
-                         std::vector<std::uint8_t> &output,
-                         const std::vector<std::uint8_t> &iv,
-                         std::size_t threads_count,
-                         const std::vector<std::size_t> &mode_params) const override {
-                (void) threads_count;
-                (void) mode_params;
+        void decrypt(const i_symmetric_block_cipher &algorithm,
+                     const std::vector<std::uint8_t> &input,
+                     std::vector<std::uint8_t> &output,
+                     const std::vector<std::uint8_t> &iv,
+                     std::size_t threads_count,
+                     const std::vector<std::size_t> &mode_params) const override {
+            (void) iv;
+            (void) mode_params;
 
-                const std::size_t block_size = algorithm.block_size();
+            const std::size_t block_size = algorithm.block_size();
+            if (block_size == 0
+                || input.size() % block_size != 0
+                ) throw std::runtime_error("Размер входных данных должен быть кратен размеру блока.");
 
-                if (block_size == 0
-                    || input.size() % block_size != 0
-                    ) throw std::runtime_error("Размер входных данных должен быть кратен размеру блока.");
+            output.resize(input.size());
 
-                const std::vector<std::uint8_t> init_vector = normalize_iv(iv, block_size);
-                output.resize(input.size());
+            const std::size_t blocks_count = input.size() / block_size;
+            task1_aux::parallel_for_blocks(blocks_count, threads_count,
+               [&](std::size_t from, std::size_t to) {
+                   for (std::size_t block = from; block < to; ++block) {
+                       const std::size_t offset = block * block_size;
 
-                std::vector<std::uint8_t> feedback = init_vector;
-                std::vector<std::uint8_t> mixed(block_size);
-                std::vector<std::uint8_t> next_feedback(block_size);
+                       algorithm.decrypt_block(input.data() + offset, output.data() + offset);
+                   }
+               });
+        }
+    };
 
-                const std::size_t blocks_count = input.size() / block_size;
+    class cbc_mode final : public i_cipher_mode {
+    public:
+        void encrypt(const i_symmetric_block_cipher &algorithm,
+                     const std::vector<std::uint8_t> &input,
+                     std::vector<std::uint8_t> &output,
+                     const std::vector<std::uint8_t> &iv,
+                     std::size_t threads_count,
+                     const std::vector<std::size_t> &mode_params) const override {
+            (void) threads_count;
+            (void) mode_params;
 
-                for (std::size_t block = 0; block < blocks_count; ++block) {
-                    const std::size_t offset = block * block_size;
-                    const auto *plain_block = input.data() + offset;
-                    auto *cipher_block = output.data() + offset;
+            const std::size_t block_size = algorithm.block_size();
+            if (block_size == 0
+                || input.size() % block_size != 0
+                ) throw std::runtime_error("Размер входных данных должен быть кратен размеру блока.");
 
-                    task1_aux::xor_blocks(plain_block, feedback.data(), mixed.data(), block_size);
-                    algorithm.encrypt_block(mixed.data(), cipher_block);
+            const std::vector<std::uint8_t> init_vector = normalize_iv(iv, block_size);
 
-                    task1_aux::xor_blocks(plain_block, cipher_block, next_feedback.data(), block_size);
-                    feedback.swap(next_feedback);
-                }
-            }
+            output.resize(input.size());
 
-            void decrypt(const i_symmetric_block_cipher &algorithm,
-                         const std::vector<std::uint8_t> &input,
-                         std::vector<std::uint8_t> &output,
-                         const std::vector<std::uint8_t> &iv,
-                         std::size_t threads_count,
-                         const std::vector<std::size_t> &mode_params) const override {
-                (void) threads_count;
-                (void) mode_params;
+            std::vector<std::uint8_t> feedback = init_vector;
+            std::vector<std::uint8_t> mixed(block_size);
 
-                const std::size_t block_size = algorithm.block_size();
+            const std::size_t blocks_count = input.size() / block_size;
 
-                if (block_size == 0
-                    || input.size() % block_size != 0
-                    ) throw std::runtime_error("Размер входных данных должен быть кратен размеру блока.");
+            for (std::size_t block = 0; block < blocks_count; ++block) {
+                const std::size_t offset = block * block_size;
+                const auto *plain_block = input.data() + offset;
+                auto *cipher_block = output.data() + offset;
 
-                const std::vector<std::uint8_t> init_vector = normalize_iv(iv, block_size);
-                output.resize(input.size());
+                task1_aux::xor_blocks(plain_block, feedback.data(), mixed.data(), block_size);
 
-                std::vector<std::uint8_t> feedback = init_vector;
-                std::vector<std::uint8_t> decrypted(block_size);
-                std::vector<std::uint8_t> next_feedback(block_size);
+                algorithm.encrypt_block(mixed.data(), cipher_block);
 
-                const std::size_t blocks_count = input.size() / block_size;
-
-                for (std::size_t block = 0; block < blocks_count; ++block) {
-                    const std::size_t offset = block * block_size;
-                    const auto *cipher_block = input.data() + offset;
-                    auto *plain_block = output.data() + offset;
-
-                    algorithm.decrypt_block(cipher_block, decrypted.data());
-                    task1_aux::xor_blocks(decrypted.data(), feedback.data(), plain_block, block_size);
-
-                    task1_aux::xor_blocks(plain_block, cipher_block, next_feedback.data(), block_size);
-                    feedback.swap(next_feedback);
-                }
-            }
-        };
-
-        class xor_block_cipher final : public i_symmetric_block_cipher {
-        public:
-            static constexpr std::size_t kBlockSize = 16;
-
-            [[nodiscard]] std::size_t block_size() const override { return kBlockSize; }
-
-            void set_key(const std::vector<std::uint8_t> &key) override {
-                if (key.empty()) throw std::runtime_error("Ключ не должен быть пустым.");
-
-                key_ = key;
-            }
-
-            void encrypt_block(const std::uint8_t *input, std::uint8_t *output) const override {
-                if (key_.empty()) throw std::runtime_error("Ключ алгоритма не инициализирован.");
-
-                for (std::size_t i = 0; i < kBlockSize; ++i) {
-                    output[i] = static_cast<std::uint8_t>(input[i] ^ key_[i % key_.size()]);
-                }
-            }
-
-            void decrypt_block(const std::uint8_t *input, std::uint8_t *output) const override {
-                encrypt_block(input, output);
-            }
-
-        private:
-            std::vector<std::uint8_t> key_;
-        };
-
-        std::unique_ptr<i_cipher_mode> create_mode(cipher_mode mode) {
-            switch (mode) {
-                case cipher_mode::ECB:
-                    return std::make_unique<ecb_mode>();
-                case cipher_mode::CBC:
-                    return std::make_unique<cbc_mode>();
-                case cipher_mode::PCBC:
-                    return std::make_unique<pcbc_mode>();
-                default:
-                    throw std::runtime_error("Неизвестный режим шифрования.");
+                std::copy(cipher_block, cipher_block + block_size, feedback.begin());
             }
         }
 
-        std::unique_ptr<i_padding_mode> create_padding(padding_mode padding) {
-            switch (padding) {
-                case padding_mode::Zeros:
-                    return std::make_unique<zeros_padding>();
-                case padding_mode::ANSI_X923:
-                    return std::make_unique<ansi_x923_padding>();
-                default:
-                    throw std::runtime_error("Неизвестный режим набивки.");
+        void decrypt(const i_symmetric_block_cipher &algorithm,
+                     const std::vector<std::uint8_t> &input,
+                     std::vector<std::uint8_t> &output,
+                     const std::vector<std::uint8_t> &iv,
+                     std::size_t threads_count,
+                     const std::vector<std::size_t> &mode_params) const override {
+            (void) mode_params;
+
+            const std::size_t block_size = algorithm.block_size();
+            if (block_size == 0 || input.size() % block_size != 0) {
+                throw std::runtime_error("Размер входных данных должен быть кратен размеру блока.");
+            }
+
+            const std::vector<std::uint8_t> init_vector = normalize_iv(iv, block_size);
+
+            output.resize(input.size());
+
+            const std::size_t blocks_count = input.size() / block_size;
+
+            task1_aux::parallel_for_blocks(blocks_count, threads_count,
+               [&](std::size_t from, std::size_t to) {
+                   std::vector<std::uint8_t> decrypted(block_size);
+
+                   for (std::size_t block = from; block < to; ++block) {
+                       const std::size_t offset = block * block_size;
+                       const auto *cipher_block = input.data() + offset;
+
+                       auto *plain_block = output.data() + offset;
+
+                       algorithm.decrypt_block(cipher_block, decrypted.data());
+
+                       const auto *feedback =
+                           block == 0
+                              ? init_vector.data()
+                              : input.data() + offset - block_size;
+
+                       task1_aux::xor_blocks(decrypted.data(), feedback, plain_block, block_size);
+                   }
+               }
+            );
+        }
+    };
+
+    class pcbc_mode final : public i_cipher_mode {
+    public:
+        void encrypt(const i_symmetric_block_cipher &algorithm,
+                     const std::vector<std::uint8_t> &input,
+                     std::vector<std::uint8_t> &output,
+                     const std::vector<std::uint8_t> &iv,
+                     std::size_t threads_count,
+                     const std::vector<std::size_t> &mode_params) const override {
+            (void) threads_count;
+            (void) mode_params;
+
+            const std::size_t block_size = algorithm.block_size();
+
+            if (block_size == 0
+                || input.size() % block_size != 0
+                ) throw std::runtime_error("Размер входных данных должен быть кратен размеру блока.");
+
+            const std::vector<std::uint8_t> init_vector = normalize_iv(iv, block_size);
+            output.resize(input.size());
+
+            std::vector<std::uint8_t> feedback = init_vector;
+            std::vector<std::uint8_t> mixed(block_size);
+            std::vector<std::uint8_t> next_feedback(block_size);
+
+            const std::size_t blocks_count = input.size() / block_size;
+
+            for (std::size_t block = 0; block < blocks_count; ++block) {
+                const std::size_t offset = block * block_size;
+                const auto *plain_block = input.data() + offset;
+                auto *cipher_block = output.data() + offset;
+
+                task1_aux::xor_blocks(plain_block, feedback.data(), mixed.data(), block_size);
+                algorithm.encrypt_block(mixed.data(), cipher_block);
+
+                task1_aux::xor_blocks(plain_block, cipher_block, next_feedback.data(), block_size);
+                feedback.swap(next_feedback);
             }
         }
 
-        int read_choice(const std::string &prompt, int from, int to) {
-            int value = from;
+        void decrypt(const i_symmetric_block_cipher &algorithm,
+                     const std::vector<std::uint8_t> &input,
+                     std::vector<std::uint8_t> &output,
+                     const std::vector<std::uint8_t> &iv,
+                     std::size_t threads_count,
+                     const std::vector<std::size_t> &mode_params) const override {
+            (void) threads_count;
+            (void) mode_params;
 
-            while (true) {
-                std::cout << prompt;
+            const std::size_t block_size = algorithm.block_size();
 
-                if (!(std::cin >> value)) {
-                    std::cout << "Ошибка ввода. Повторите попытку." << std::endl;
-                    continue;
-                }
+            if (block_size == 0
+                || input.size() % block_size != 0
+                ) throw std::runtime_error("Размер входных данных должен быть кратен размеру блока.");
 
-                if (value >= from && value <= to) return value;
+            const std::vector<std::uint8_t> init_vector = normalize_iv(iv, block_size);
+            output.resize(input.size());
 
-                std::cout << "Значение вне диапазона. Повторите попытку." << std::endl;
+            std::vector<std::uint8_t> feedback = init_vector;
+            std::vector<std::uint8_t> decrypted(block_size);
+            std::vector<std::uint8_t> next_feedback(block_size);
+
+            const std::size_t blocks_count = input.size() / block_size;
+
+            for (std::size_t block = 0; block < blocks_count; ++block) {
+                const std::size_t offset = block * block_size;
+                const auto *cipher_block = input.data() + offset;
+                auto *plain_block = output.data() + offset;
+
+                algorithm.decrypt_block(cipher_block, decrypted.data());
+                task1_aux::xor_blocks(decrypted.data(), feedback.data(), plain_block, block_size);
+
+                task1_aux::xor_blocks(plain_block, cipher_block, next_feedback.data(), block_size);
+                feedback.swap(next_feedback);
+            }
+        }
+    };
+
+    class xor_block_cipher final : public i_symmetric_block_cipher {
+    public:
+        static constexpr std::size_t kBlockSize = 16;
+
+        [[nodiscard]] std::size_t block_size() const override { return kBlockSize; }
+
+        void set_key(const std::vector<std::uint8_t> &key) override {
+            if (key.empty()) throw std::runtime_error("Ключ не должен быть пустым.");
+
+            key_ = key;
+        }
+
+        void encrypt_block(const std::uint8_t *input, std::uint8_t *output) const override {
+            if (key_.empty()) throw std::runtime_error("Ключ алгоритма не инициализирован.");
+
+            for (std::size_t i = 0; i < kBlockSize; ++i) {
+                output[i] = static_cast<std::uint8_t>(input[i] ^ key_[i % key_.size()]);
             }
         }
 
-        std::size_t read_threads_count() {
-            std::size_t threads_count = 1;
-
-            while (true) {
-                std::cout << "Количество потоков (>=1): ";
-                if (!(std::cin >> threads_count)) {
-                    std::cout << "Ошибка ввода. Повторите попытку." << std::endl;
-                    continue;
-                }
-
-                if (threads_count >= 1) return threads_count;
-
-                std::cout << "Количество потоков должно быть не меньше 1." << std::endl;
-            }
+        void decrypt_block(const std::uint8_t *input, std::uint8_t *output) const override {
+            encrypt_block(input, output);
         }
-    } // namespace
+
+    private:
+        std::vector<std::uint8_t> key_;
+    };
+
+    std::unique_ptr<i_cipher_mode> create_mode(cipher_mode mode) {
+        switch (mode) {
+            case cipher_mode::ECB:
+                return std::make_unique<ecb_mode>();
+            case cipher_mode::CBC:
+                return std::make_unique<cbc_mode>();
+            case cipher_mode::PCBC:
+                return std::make_unique<pcbc_mode>();
+            default:
+                throw std::runtime_error("Неизвестный режим шифрования.");
+        }
+    }
+
+    std::unique_ptr<i_padding_mode> create_padding(padding_mode padding) {
+        switch (padding) {
+            case padding_mode::Zeros:
+                return std::make_unique<zeros_padding>();
+            case padding_mode::ANSI_X923:
+                return std::make_unique<ansi_x923_padding>();
+            default:
+                throw std::runtime_error("Неизвестный режим набивки.");
+        }
+    }
+
+    int read_choice(const std::string &prompt, int from, int to) {
+        int value = from;
+
+        while (true) {
+            std::cout << prompt;
+
+            if (!(std::cin >> value)) {
+                std::cout << "Ошибка ввода. Повторите попытку." << std::endl;
+                continue;
+            }
+
+            if (value >= from && value <= to) return value;
+
+            std::cout << "Значение вне диапазона. Повторите попытку." << std::endl;
+        }
+    }
+
+    std::size_t read_threads_count() {
+        std::size_t threads_count = 1;
+
+        while (true) {
+            std::cout << "Количество потоков (>=1): ";
+            if (!(std::cin >> threads_count)) {
+                std::cout << "Ошибка ввода. Повторите попытку." << std::endl;
+                continue;
+            }
+
+            if (threads_count >= 1) return threads_count;
+
+            std::cout << "Количество потоков должно быть не меньше 1." << std::endl;
+        }
+    }
 
     void task1_aux::parallel_for_blocks(
             const std::size_t blocks_count,
@@ -734,3 +732,4 @@ namespace tasks {
         std::cout << "Операция завершена. Результат записан в файл: " << output_file_path << std::endl;
     }
 }
+
