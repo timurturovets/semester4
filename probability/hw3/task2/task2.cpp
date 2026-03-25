@@ -94,7 +94,7 @@ namespace tasks {
             level_table_->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
             level_table_->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
-            normalize_button_ = new QPushButton("Нормализовать строки");
+            // normalize_button_ = new QPushButton("Нормализовать строки");
             simulate_button_ = new QPushButton("Смоделировать");
             sample_button_ = new QPushButton("Сгенерировать путь");
 
@@ -125,7 +125,7 @@ namespace tasks {
             auto *table_group = new QGroupBox("Параметры уровней (p_stop и вероятности переходов)");
             auto *table_layout = new QVBoxLayout();
             table_layout->addWidget(level_table_);
-            table_layout->addWidget(normalize_button_);
+            // table_layout->addWidget(normalize_button_);
             table_group->setLayout(table_layout);
 
             auto *button_row = new QHBoxLayout();
@@ -177,9 +177,9 @@ namespace tasks {
             connect(sample_button_, &QPushButton::clicked, this, [this] {
                 run_sample();
             });
-            connect(normalize_button_, &QPushButton::clicked, this, [this] {
+            /*connect(normalize_button_, &QPushButton::clicked, this, [this] {
                 normalize_table();
-            });
+            });*/
 
             run_sample();
         }

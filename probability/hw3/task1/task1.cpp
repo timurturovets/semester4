@@ -15,7 +15,7 @@ namespace tasks {
         (void) argc;
         (void) argv;
 
-        std::cout << "Эмпирическая оценка вероятностей для серии кластеров.\n";
+        system("cls");
 
         int m = task1_aux::read_int("Введите M (количество кластеров, M >= 2): ", 2);
         int n = task1_aux::read_int("Введите n (длина кластера, n >= 1): ", 1);
@@ -31,7 +31,7 @@ namespace tasks {
         int d = task1_aux::read_int("Введите D (число соединяемых пар соседних кластеров, 0..M-1): ", 0, max_pairs);
         long long trials = task1_aux::read_long_long("Введите число испытаний (>= 1): ", 1);
 
-        if (k > 2 * n)  std::cout << "k > 2n, соединяемых пар быть не может.\n";
+        if (k > 2 * n)  std::cout << "k > 2n, соединяемых пар быть не может." << std::endl;
 
         std::random_device rd;
         std::mt19937 rng(rd());
@@ -68,11 +68,11 @@ namespace tasks {
             return static_cast<double>(count) / static_cast<double>(trials);
         };
 
-        std::cout << std::fixed << std::setprecision(6);
-        std::cout << "\nРезультаты (" << trials << " испытаний):\n";
-        std::cout << "a) P(все соседние пары соединяемы) = " << probability(count_all) << "\n";
-        std::cout << "b) P(ровно D соединяемых пар) = " << probability(count_d) << "\n";
-        std::cout << "c) P(нет соединяемых пар) = " << probability(count_none) << "\n";
+        std::cout << std::fixed << std::setprecision(6) << std::endl;
+        std::cout << "Результаты (" << trials << " испытаний):" << std::endl;
+        std::cout << "a) P(все соседние пары соединяемы) = " << probability(count_all) << std::endl;
+        std::cout << "b) P(ровно D соединяемых пар) = " << probability(count_d) << std::endl;
+        std::cout << "c) P(нет соединяемых пар) = " << probability(count_none) << std::endl;
     }
 
     int task1_aux::read_int(const std::string &prompt, int min_value, int max_value) {
@@ -80,15 +80,15 @@ namespace tasks {
             std::cout << prompt;
             int value = 0;
             if (!(std::cin >> value)) {
-                std::cin.clear();
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                std::cout << "Ошибка ввода. Повторите.\n";
+                std::cout << "Ошибка ввода." << std::endl;
                 continue;
             }
+
             if (value < min_value || value > max_value) {
-                std::cout << "Значение должно быть в диапазоне [" << min_value << "; " << max_value << "].\n";
+                std::cout << "Значение должно быть в диапазоне [" << min_value << "; " << max_value << "]." << std::endl;
                 continue;
             }
+
             return value;
         }
     }
@@ -98,15 +98,15 @@ namespace tasks {
             std::cout << prompt;
             long long value = 0;
             if (!(std::cin >> value)) {
-                std::cin.clear();
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                std::cout << "Ошибка ввода. Повторите.\n";
+                std::cout << "Ошибка ввода." << std::endl;
                 continue;
             }
+
             if (value < min_value) {
-                std::cout << "Значение должно быть не меньше " << min_value << ".\n";
+                std::cout << "Значение должно быть не меньше " << min_value << std::endl;
                 continue;
             }
+
             return value;
         }
     }
@@ -116,10 +116,12 @@ namespace tasks {
             std::cout << "Введите алфавит (строка из " << r << " различных символов без пробелов): ";
             std::string alphabet;
             std::cin >> alphabet;
+
             if (alphabet.size() != r) {
-                std::cout << "Длина строки должна быть " << r << ".\n";
+                std::cout << "Длина строки должна быть " << r << std::endl;
                 continue;
             }
+
             std::unordered_set<char> seen;
             bool unique = true;
             for (char c : alphabet) {
@@ -128,24 +130,28 @@ namespace tasks {
                     break;
                 }
             }
+
             if (!unique) {
-                std::cout << "Символы должны быть различными.\n";
+                std::cout << "Символы должны быть различными." << std::endl;
                 continue;
             }
+
             return alphabet;
         }
     }
 
     std::string task1_aux::read_pattern(int k, const std::string &alphabet) {
-        std::unordered_set<char> allowed(alphabet.begin(), alphabet.end());
+        std::unordered_set allowed(alphabet.begin(), alphabet.end());
         while (true) {
             std::cout << "Введите k-паттерн (строка длины " << k << "): ";
             std::string pattern;
             std::cin >> pattern;
+
             if (static_cast<int>(pattern.size()) != k) {
-                std::cout << "Длина паттерна должна быть " << k << ".\n";
+                std::cout << "Длина паттерна должна быть " << k << std::endl;
                 continue;
             }
+
             bool ok = true;
             for (char c : pattern) {
                 if (allowed.find(c) == allowed.end()) {
@@ -153,10 +159,12 @@ namespace tasks {
                     break;
                 }
             }
+
             if (!ok) {
-                std::cout << "Паттерн должен состоять только из символов алфавита.\n";
+                std::cout << "Паттерн должен состоять только из символов алфавита." << std::endl;
                 continue;
             }
+
             return pattern;
         }
     }
@@ -165,9 +173,11 @@ namespace tasks {
         std::uniform_int_distribution<int> dist(0, static_cast<int>(alphabet.size()) - 1);
         std::string cluster;
         cluster.reserve(n);
+
         for (int i = 0; i < n; ++i) {
             cluster.push_back(alphabet[dist(rng)]);
         }
+
         return cluster;
     }
 
@@ -177,9 +187,7 @@ namespace tasks {
         int n_right = static_cast<int>(right.size());
 
         for (int i = 1; i < k; ++i) {
-            if (i > n_left || (k - i) > n_right) {
-                continue;
-            }
+            if (i > n_left || k - i > n_right) continue;
 
             bool ok = true;
             int left_start = n_left - i;
@@ -198,9 +206,8 @@ namespace tasks {
                     break;
                 }
             }
-            if (ok) {
-                return true;
-            }
+
+            if (ok) return true;
         }
 
         return false;
